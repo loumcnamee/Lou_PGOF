@@ -10,7 +10,7 @@ Multiple algorithms (selectable by user/config)
 Observer pattern for input/process/output decoupling
 Let me first read the existing SVG file and the current project structure to understand what exists.
 
-![PGOF Architecture](PGOF_design.drawio.svg)
+![PGOF Architecture](PGOF_architecture.drawio.svg)
 
 The file is currently empty, so I need to create a proper draw.io SVG from scratch with the correct XML structure that draw.io uses to embed diagrams. Building the draw.io SVG format... Finishing up the SOLID principles with segregated interfaces and dependency on abstractions. Now I'm structuring the draw.io diagram with layers for input sources at the top, the event bus and observer pattern in the middle, the parking engine with algorithm strategy in the core, data structures below that, and output layers for the UI and fee collection at the bottom.
 
