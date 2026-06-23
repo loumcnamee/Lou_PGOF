@@ -8,13 +8,6 @@ add_executable(pgof_main
 
 target_link_libraries(pgof_main
 	PRIVATE
-		pgof::garage_capacity
+		pgof::pgof
 )
-
-# Ensure the include path for garage_capacity headers is available
-target_include_directories(pgof_main
-	PRIVATE
-		${CMAKE_SOURCE_DIR}/libs/garage_capacity/include
-)
-
 
