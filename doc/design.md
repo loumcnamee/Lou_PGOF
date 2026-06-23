@@ -494,3 +494,143 @@ Two annotation boxes at the bottom:
 
 Time-Cycle Loop — the 6-step sequence each tick (enqueue → notify → find_space → unpark → fee → report)
 SOLID Mapping — which principle each design decision satisfies
+
+---
+references:
+
+- "File: /apps/pgof_main/src/pgof_main.cpp"
+generationTime: 2026-06-23T03:42:52.550Z
+
+---
+
+```mermaid
+sequenceDiagram
+    participant Main as Main Application
+    participant RNG as Random Generators
+    participant Garage as Garage
+    participant Vehicle as Vehicle
+    participant Ticket as Ticket
+
+    %% Initialization Phase
+    rect rgb(230, 245, 255)
+        Note over Main,Garage: Initialization Phase
+        Main->>Garage: Garage(TOTAL_SPACES=100)
+        activate Garage
+        Garage-->>Main: Garage instance created
+        deactivate Garage
+        
+        Main->>Garage: getStatus()
+        activate Garage
+        Garage-->>Main: GarageStatus (spaces breakdown)
+        deactivate Garage
+        
+        Note right of Main: Display space allocation:<br/>Size-1, Size-2, Size-3
+    end
+
+    %% Random Generator Setup
+    rect rgb(255, 245, 230)
+        Note over Main,RNG: Random Generator Setup
+        Main->>RNG: Initialize mt19937 generator
+        activate RNG
+        RNG-->>Main: Generator ready
+        deactivate RNG
+        
+        Main->>RNG: Create size_dist(1,3)
+        activate RNG
+        RNG-->>Main: Size distribution ready
+        deactivate RNG
+        
+        Main->>RNG: Create wait_dist(1,10)
+        activate RNG
+        RNG-->>Main: Wait distribution ready
+        deactivate RNG
+    end
+
+    %% Simulation Loop
+    rect rgb(240, 255, 240)
+        Note over Main,Ticket: Simulation Loop (T=0 to T=50)
+        
+        loop For each time step (0 to SIMULATION_TIME)
+            
+            %% Vehicle Generation (every 2 time units)
+            alt Time % 2 == 0 AND vehicles < 30
+                Main->>RNG: size_dist(gen)
+                activate RNG
+                RNG-->>Main: Random size (1-3)
+                deactivate RNG
+                
+                Main->>RNG: wait_dist(gen)
+                activate RNG
+                RNG-->>Main: Random wait time (1-10)
+                deactivate RNG
+                
+                Main->>Vehicle: Vehicle(id, size, wait_time, arrival_time)
+                activate Vehicle
+                Vehicle-->>Main: New Vehicle instance
+                deactivate Vehicle
+                
+                Main->>Garage: addVehicle(vehicle)
+                activate Garage
+                Garage-->>Main: Vehicle added to queue
+                deactivate Garage
+                
+                Note right of Main: Log vehicle arrival
+            end
+            
+            %% Parking Loop
+            loop While parkNextVehicle returns true
+                Main->>Garage: parkNextVehicle(current_time)
+                activate Garage
+                Garage-->>Main: true (vehicle parked)
+                deactivate Garage
+                
+                Main->>Garage: getMode()
+                activate Garage
+                Garage-->>Main: ParkingMode (FIFO/SELECTIVE)
+                deactivate Garage
+                
+                Note right of Main: Log parking event with mode
+            end
+            
+            %% Unpark Expired Vehicles
+            Main->>Garage: unparkExpiredVehicles(current_time)
+            activate Garage
+            
+            Note over Garage: Check all parked vehicles<br/>for expiration
+            
+            Garage-->>Main: vector of Tickets
+            deactivate Garage
+            
+            loop For each expired ticket
+                Main->>Ticket: getVehicleId()
+                activate Ticket
+                Ticket-->>Main: Vehicle ID
+                deactivate Ticket
+                
+                Main->>Ticket: getFee()
+                activate Ticket
+                Ticket-->>Main: Parking fee amount
+                deactivate Ticket
+                
+                Note right of Main: Log unpark event with fee
+            end
+            
+        end
+    end
+
+    %% Final Statistics
+    rect rgb(255, 240, 245)
+        Note over Main,Garage: Final Statistics
+        Main->>Garage: getStatus()
+        activate Garage
+        Garage-->>Main: Final GarageStatus
+        deactivate Garage
+        
+        Main->>Garage: status.getTotalOccupied()
+        activate Garage
+        Garage-->>Main: Occupied space count
+        deactivate Garage
+        
+        Note right of Main: Display final stats:<br/>- Cars parked<br/>- Fees collected<br/>- Queue length<br/>- Occupied spaces
+    end
+    ```
