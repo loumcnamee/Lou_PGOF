@@ -15,101 +15,79 @@
 #include "pgof/selective_strategy.h"
 #include "pgof/types.h"
 
-#include <cstdlib>
-#include <iostream>
+#include <gtest/gtest.h>
 #include <stdexcept>
 #include <vector>
 
 using namespace pgof;
 
-namespace {
-
-void expect(bool condition, const char* message) {
-    if (!condition) {
-        std::cerr << "Test failed: " << message << '\n';
-        std::exit(EXIT_FAILURE);
-    }
-}
-
 // ============================================================================
 // UC-001: System Initialization
 // ============================================================================
 
-void test_UC001_system_initialization_valid_range() {
+TEST(UC001_SystemInitialization, ValidRange) {
     // WHEN PGOF starts with valid N, THE SYSTEM SHALL initialize successfully
     Garage garage(100);
     GarageStatus status = garage.getStatus();
 
-    expect(status.total_spaces == 100, "UC-001: Total spaces should be 100");
-    expect(status.n1_spaces + status.n2_spaces + status.n3_spaces == 100,
-           "UC-001: Space distribution should sum to total");
-    expect(status.fees_collected == 0, "UC-001: Initial fees should be zero");
-    expect(status.cars_parked == 0, "UC-001: Initial cars parked should be zero");
+    EXPECT_EQ(status.total_spaces, 100) << "UC-001: Total spaces should be 100";
+    EXPECT_EQ(status.n1_spaces + status.n2_spaces + status.n3_spaces, 100)
+        << "UC-001: Space distribution should sum to total";
+    EXPECT_EQ(status.fees_collected, 0) << "UC-001: Initial fees should be zero";
+    EXPECT_EQ(status.cars_parked, 0) << "UC-001: Initial cars parked should be zero";
 }
 
-void test_UC001_system_initialization_minimum() {
+TEST(UC001_SystemInitialization, Minimum) {
     // Test minimum valid range (N=10)
     Garage garage(10);
     GarageStatus status = garage.getStatus();
 
-    expect(status.total_spaces == 10, "UC-001: Minimum spaces should be 10");
-    expect(status.n1_spaces >= 1, "UC-001: Should have at least one size-1 space");
-    expect(status.n2_spaces >= 1, "UC-001: Should have at least one size-2 space");
-    expect(status.n3_spaces >= 1, "UC-001: Should have at least one size-3 space");
+    EXPECT_EQ(status.total_spaces, 10) << "UC-001: Minimum spaces should be 10";
+    EXPECT_GE(status.n1_spaces, 1) << "UC-001: Should have at least one size-1 space";
+    EXPECT_GE(status.n2_spaces, 1) << "UC-001: Should have at least one size-2 space";
+    EXPECT_GE(status.n3_spaces, 1) << "UC-001: Should have at least one size-3 space";
 }
 
-void test_UC001_system_initialization_maximum() {
+TEST(UC001_SystemInitialization, Maximum) {
     // Test maximum valid range (N=1,000,000)
     Garage garage(1000000);
     GarageStatus status = garage.getStatus();
 
-    expect(status.total_spaces == 1000000, "UC-001: Maximum spaces should be 1,000,000");
+    EXPECT_EQ(status.total_spaces, 1000000) << "UC-001: Maximum spaces should be 1,000,000";
 }
 
-void test_UC001_system_initialization_invalid_low() {
+TEST(UC001_SystemInitialization, InvalidLow) {
     // IF N is outside range [10, 1000000], THEN throw out_of_range
-    bool threw = false;
-    try {
-        Garage garage(9);
-    } catch (const std::out_of_range&) {
-        threw = true;
-    }
-    expect(threw, "UC-001: N<10 should throw out_of_range");
+    EXPECT_THROW(Garage garage(9), std::out_of_range) << "UC-001: N<10 should throw out_of_range";
 }
 
-void test_UC001_system_initialization_invalid_high() {
-    bool threw = false;
-    try {
-        Garage garage(1000001);
-    } catch (const std::out_of_range&) {
-        threw = true;
-    }
-    expect(threw, "UC-001: N>1000000 should throw out_of_range");
+TEST(UC001_SystemInitialization, InvalidHigh) {
+    EXPECT_THROW(Garage garage(1000001), std::out_of_range) << "UC-001: N>1000000 should throw out_of_range";
 }
 
-void test_UC001_reinitialize() {
+TEST(UC001_SystemInitialization, Reinitialize) {
     Garage garage(100);
     garage.initialize(200);
     GarageStatus status = garage.getStatus();
 
-    expect(status.total_spaces == 200, "UC-001: Re-initialization should update total spaces");
+    EXPECT_EQ(status.total_spaces, 200) << "UC-001: Re-initialization should update total spaces";
 }
 
 // ============================================================================
 // UC-002: Vehicle Arrival and Queue Entry
 // ============================================================================
 
-void test_UC002_vehicle_arrival_adds_to_queue() {
+TEST(UC002_VehicleArrival, AddsToQueue) {
     // WHEN an autonomous vehicle arrives, THE SYSTEM SHALL add it to the waiting queue
     Garage garage(100);
 
     Vehicle v1(1, Size::SMALL, 5, 0);
     garage.addVehicle(v1);
 
-    expect(garage.getQueueSize() == 1, "UC-002: Queue should have 1 vehicle after arrival");
+    EXPECT_EQ(garage.getQueueSize(), 1) << "UC-002: Queue should have 1 vehicle after arrival";
 }
 
-void test_UC002_fifo_queue_ordering() {
+TEST(UC002_VehicleArrival, FIFOQueueOrdering) {
     // Vehicles should be in order of arrival (FIFO)
     Garage garage(100);
 
@@ -121,10 +99,10 @@ void test_UC002_fifo_queue_ordering() {
     garage.addVehicle(v2);
     garage.addVehicle(v3);
 
-    expect(garage.getQueueSize() == 3, "UC-002: Queue should have 3 vehicles");
+    EXPECT_EQ(garage.getQueueSize(), 3) << "UC-002: Queue should have 3 vehicles";
 }
 
-void test_UC002_accept_all_valid_sizes() {
+TEST(UC002_VehicleArrival, AcceptAllValidSizes) {
     // THE SYSTEM SHALL accept vehicles with sizes {1, 2, 3}
     Garage garage(100);
 
@@ -136,10 +114,10 @@ void test_UC002_accept_all_valid_sizes() {
     garage.addVehicle(v2);
     garage.addVehicle(v3);
 
-    expect(garage.getQueueSize() == 3, "UC-002: All sizes should be accepted");
+    EXPECT_EQ(garage.getQueueSize(), 3) << "UC-002: All sizes should be accepted";
 }
 
-void test_UC002_accept_all_valid_wait_times() {
+TEST(UC002_VehicleArrival, AcceptAllValidWaitTimes) {
     // THE SYSTEM SHALL accept requested wait times in range {1..10}
     Garage garage(100);
 
@@ -148,14 +126,14 @@ void test_UC002_accept_all_valid_wait_times() {
         garage.addVehicle(v);
     }
 
-    expect(garage.getQueueSize() == 10, "UC-002: All wait times 1-10 should be accepted");
+    EXPECT_EQ(garage.getQueueSize(), 10) << "UC-002: All wait times 1-10 should be accepted";
 }
 
 // ============================================================================
 // UC-003: Park Vehicle (Normal Mode - FIFO)
 // ============================================================================
 
-void test_UC003_park_vehicle_fifo_order() {
+TEST(UC003_ParkVehicle, FIFOOrder) {
     // WHILE parking spaces are available, THE SYSTEM SHALL park vehicles in order of arrival
     Garage garage(100);
 
@@ -166,15 +144,15 @@ void test_UC003_park_vehicle_fifo_order() {
     garage.addVehicle(v2);
 
     bool parked1 = garage.parkNextVehicle(0);
-    expect(parked1, "UC-003: First vehicle should be parked");
-    expect(garage.getQueueSize() == 1, "UC-003: Queue should have 1 vehicle after parking");
+    EXPECT_TRUE(parked1) << "UC-003: First vehicle should be parked";
+    EXPECT_EQ(garage.getQueueSize(), 1) << "UC-003: Queue should have 1 vehicle after parking";
 
     bool parked2 = garage.parkNextVehicle(1);
-    expect(parked2, "UC-003: Second vehicle should be parked");
-    expect(garage.getQueueSize() == 0, "UC-003: Queue should be empty after parking both");
+    EXPECT_TRUE(parked2) << "UC-003: Second vehicle should be parked";
+    EXPECT_EQ(garage.getQueueSize(), 0) << "UC-003: Queue should be empty after parking both";
 }
 
-void test_UC003_parking_compatibility() {
+TEST(UC003_ParkVehicle, ParkingCompatibility) {
     // THE SYSTEM SHALL assign vehicle to space where space_size >= vehicle_size
     Garage garage(100);
 
@@ -182,41 +160,41 @@ void test_UC003_parking_compatibility() {
     Vehicle v_small(1, Size::SMALL, 5, 0);
     garage.addVehicle(v_small);
     bool parked = garage.parkNextVehicle(0);
-    expect(parked, "UC-003: Small vehicle should find a compatible space");
+    EXPECT_TRUE(parked) << "UC-003: Small vehicle should find a compatible space";
 
     // Medium vehicle needs size 2 or 3
     Vehicle v_medium(2, Size::MEDIUM, 5, 1);
     garage.addVehicle(v_medium);
     parked = garage.parkNextVehicle(1);
-    expect(parked, "UC-003: Medium vehicle should find a compatible space");
+    EXPECT_TRUE(parked) << "UC-003: Medium vehicle should find a compatible space";
 
     // Large vehicle needs size 3 only
     Vehicle v_large(3, Size::LARGE, 5, 2);
     garage.addVehicle(v_large);
     parked = garage.parkNextVehicle(2);
-    expect(parked, "UC-003: Large vehicle should find a compatible space");
+    EXPECT_TRUE(parked) << "UC-003: Large vehicle should find a compatible space";
 }
 
-void test_UC003_increments_parked_count() {
+TEST(UC003_ParkVehicle, IncrementsParkedCount) {
     Garage garage(100);
 
     Vehicle v(1, Size::SMALL, 5, 0);
     garage.addVehicle(v);
     garage.parkNextVehicle(0);
 
-    expect(garage.getCarsParked() == 1, "UC-003: Cars parked count should be 1");
+    EXPECT_EQ(garage.getCarsParked(), 1) << "UC-003: Cars parked count should be 1";
 }
 
-void test_UC003_garage_mode_is_fifo_initially() {
+TEST(UC003_ParkVehicle, GarageModeIsFIFOInitially) {
     Garage garage(100);
-    expect(garage.getMode() == ParkingMode::FIFO, "UC-003: Initial mode should be FIFO");
+    EXPECT_EQ(garage.getMode(), ParkingMode::FIFO) << "UC-003: Initial mode should be FIFO";
 }
 
 // ============================================================================
 // UC-004: Park Vehicle (Selective Mode)
 // ============================================================================
 
-void test_UC004_selective_mode_when_first_blocked() {
+TEST(UC004_SelectiveMode, WhenFirstBlocked) {
     // WHEN there are no empty spaces for the first vehicle in queue,
     // THE SYSTEM SHALL select the first eligible vehicle from the queue to park
 
@@ -245,24 +223,24 @@ void test_UC004_selective_mode_when_first_blocked() {
     bool parked = garage.parkNextVehicle(large_spaces + 2);
 
     // The blocked large vehicle should still be in queue
-    expect(garage.getQueueSize() >= 1, "UC-004: Blocked vehicle should remain in queue");
+    EXPECT_GE(garage.getQueueSize(), 1) << "UC-004: Blocked vehicle should remain in queue";
 }
 
-void test_UC004_returns_to_fifo_when_space_available() {
+TEST(UC004_SelectiveMode, ReturnsToFIFOWhenSpaceAvailable) {
     // WHEN parking spaces become available for the first vehicle in queue,
     // THE SYSTEM SHALL return to FIFO parking order
 
     Garage garage(10);
 
     // This test verifies mode switching behavior
-    expect(garage.getMode() == ParkingMode::FIFO, "UC-004: Should start in FIFO mode");
+    EXPECT_EQ(garage.getMode(), ParkingMode::FIFO) << "UC-004: Should start in FIFO mode";
 }
 
 // ============================================================================
 // UC-005: Unpark Vehicle
 // ============================================================================
 
-void test_UC005_unpark_expired_vehicle() {
+TEST(UC005_Unpark, ExpiredVehicle) {
     // WHEN a parked vehicle's wait time expires, THE SYSTEM SHALL unpark the vehicle
     Garage garage(100);
 
@@ -273,10 +251,10 @@ void test_UC005_unpark_expired_vehicle() {
     // Unpark at time 5 (wait time expired)
     std::vector<ParkingTicket> tickets = garage.unparkExpiredVehicles(5);
 
-    expect(tickets.size() == 1, "UC-005: Should have 1 ticket for unparked vehicle");
+    EXPECT_EQ(tickets.size(), 1) << "UC-005: Should have 1 ticket for unparked vehicle";
 }
 
-void test_UC005_space_becomes_available_after_unpark() {
+TEST(UC005_Unpark, SpaceBecomesAvailableAfterUnpark) {
     Garage garage(100);
 
     Vehicle v(1, Size::SMALL, 3, 0);
@@ -291,10 +269,10 @@ void test_UC005_space_becomes_available_after_unpark() {
     GarageStatus after = garage.getStatus();
     int occupied_after = after.getTotalOccupied();
 
-    expect(occupied_after == occupied_before - 1, "UC-005: One less occupied space after unpark");
+    EXPECT_EQ(occupied_after, occupied_before - 1) << "UC-005: One less occupied space after unpark";
 }
 
-void test_UC005_no_unpark_before_expiry() {
+TEST(UC005_Unpark, NoUnparkBeforeExpiry) {
     Garage garage(100);
 
     Vehicle v(1, Size::SMALL, 5, 0);  // Wait time = 5
@@ -304,14 +282,14 @@ void test_UC005_no_unpark_before_expiry() {
     // Try to unpark at time 3 (before wait time expires)
     std::vector<ParkingTicket> tickets = garage.unparkExpiredVehicles(3);
 
-    expect(tickets.empty(), "UC-005: Should not unpark before wait time expires");
+    EXPECT_TRUE(tickets.empty()) << "UC-005: Should not unpark before wait time expires";
 }
 
 // ============================================================================
 // UC-006: Calculate and Track Fees
 // ============================================================================
 
-void test_UC006_fee_calculation_formula() {
+TEST(UC006_FeeCalculation, Formula) {
     // WHEN unparking, THE SYSTEM SHALL calculate fee = vehicle_size × parking_time
     Garage garage(100);
 
@@ -322,11 +300,11 @@ void test_UC006_fee_calculation_formula() {
 
     std::vector<ParkingTicket> tickets = garage.unparkExpiredVehicles(5);
 
-    expect(tickets.size() == 1, "UC-006: Should have 1 ticket");
-    expect(tickets[0].getFee() == 2 * 5, "UC-006: Fee should be size(2) * time(5) = 10");
+    EXPECT_EQ(tickets.size(), 1) << "UC-006: Should have 1 ticket";
+    EXPECT_EQ(tickets[0].getFee(), 2 * 5) << "UC-006: Fee should be size(2) * time(5) = 10";
 }
 
-void test_UC006_running_total() {
+TEST(UC006_FeeCalculation, RunningTotal) {
     // THE SYSTEM SHALL maintain a running sum of all fees collected
     Garage garage(100);
 
@@ -340,13 +318,13 @@ void test_UC006_running_total() {
     garage.parkNextVehicle(1);
 
     garage.unparkExpiredVehicles(2);  // Unpark v1
-    expect(garage.getFeesCollected() == 2, "UC-006: Running total should be 2");
+    EXPECT_EQ(garage.getFeesCollected(), 2) << "UC-006: Running total should be 2";
 
     garage.unparkExpiredVehicles(4);  // Unpark v2
-    expect(garage.getFeesCollected() == 8, "UC-006: Running total should be 2 + 6 = 8");
+    EXPECT_EQ(garage.getFeesCollected(), 8) << "UC-006: Running total should be 2 + 6 = 8";
 }
 
-void test_UC006_different_vehicle_sizes_fees() {
+TEST(UC006_FeeCalculation, DifferentVehicleSizesFees) {
     Garage garage(100);
 
     // Test all three sizes - all parked at same time, same wait time
@@ -365,31 +343,31 @@ void test_UC006_different_vehicle_sizes_fees() {
 
     garage.unparkExpiredVehicles(4);
 
-    expect(garage.getFeesCollected() == 24, "UC-006: Total fees should be 4 + 8 + 12 = 24");
+    EXPECT_EQ(garage.getFeesCollected(), 24) << "UC-006: Total fees should be 4 + 8 + 12 = 24";
 }
 
 // ============================================================================
 // UC-007: Track Parking Statistics
 // ============================================================================
 
-void test_UC007_running_car_count() {
+TEST(UC007_ParkingStatistics, RunningCarCount) {
     // THE SYSTEM SHALL maintain a running count of total cars parked
     Garage garage(100);
 
-    expect(garage.getCarsParked() == 0, "UC-007: Initial car count should be 0");
+    EXPECT_EQ(garage.getCarsParked(), 0) << "UC-007: Initial car count should be 0";
 
     Vehicle v1(1, Size::SMALL, 5, 0);
     garage.addVehicle(v1);
     garage.parkNextVehicle(0);
-    expect(garage.getCarsParked() == 1, "UC-007: Car count should be 1");
+    EXPECT_EQ(garage.getCarsParked(), 1) << "UC-007: Car count should be 1";
 
     Vehicle v2(2, Size::MEDIUM, 5, 1);
     garage.addVehicle(v2);
     garage.parkNextVehicle(1);
-    expect(garage.getCarsParked() == 2, "UC-007: Car count should be 2");
+    EXPECT_EQ(garage.getCarsParked(), 2) << "UC-007: Car count should be 2";
 }
 
-void test_UC007_car_count_persists_after_unpark() {
+TEST(UC007_ParkingStatistics, CarCountPersistsAfterUnpark) {
     // Historical count should not decrease when vehicles leave
     Garage garage(100);
 
@@ -398,42 +376,42 @@ void test_UC007_car_count_persists_after_unpark() {
     garage.parkNextVehicle(0);
     garage.unparkExpiredVehicles(2);
 
-    expect(garage.getCarsParked() == 1, "UC-007: Historical car count should remain 1");
+    EXPECT_EQ(garage.getCarsParked(), 1) << "UC-007: Historical car count should remain 1";
 }
 
-void test_UC007_fee_total_tracking() {
+TEST(UC007_ParkingStatistics, FeeTotalTracking) {
     Garage garage(100);
 
-    expect(garage.getFeesCollected() == 0, "UC-007: Initial fees should be 0");
+    EXPECT_EQ(garage.getFeesCollected(), 0) << "UC-007: Initial fees should be 0";
 
     Vehicle v(1, Size::LARGE, 3, 0);  // Fee: 3 * 3 = 9
     garage.addVehicle(v);
     garage.parkNextVehicle(0);
     garage.unparkExpiredVehicles(3);
 
-    expect(garage.getFeesCollected() == 9, "UC-007: Fees should be tracked correctly");
+    EXPECT_EQ(garage.getFeesCollected(), 9) << "UC-007: Fees should be tracked correctly";
 }
 
 // ============================================================================
 // UC-008: Query Garage Status
 // ============================================================================
 
-void test_UC008_query_total_spaces() {
+TEST(UC008_QueryStatus, TotalSpaces) {
     Garage garage(150);
     GarageStatus status = garage.getStatus();
 
-    expect(status.total_spaces == 150, "UC-008: Should report correct total spaces");
+    EXPECT_EQ(status.total_spaces, 150) << "UC-008: Should report correct total spaces";
 }
 
-void test_UC008_query_space_distribution() {
+TEST(UC008_QueryStatus, SpaceDistribution) {
     Garage garage(100);
     GarageStatus status = garage.getStatus();
 
     int sum = status.n1_spaces + status.n2_spaces + status.n3_spaces;
-    expect(sum == status.total_spaces, "UC-008: Space distribution should sum to total");
+    EXPECT_EQ(sum, status.total_spaces) << "UC-008: Space distribution should sum to total";
 }
 
-void test_UC008_query_occupied_spaces() {
+TEST(UC008_QueryStatus, OccupiedSpaces) {
     Garage garage(100);
 
     Vehicle v1(1, Size::SMALL, 10, 0);
@@ -445,10 +423,10 @@ void test_UC008_query_occupied_spaces() {
     garage.parkNextVehicle(1);
 
     GarageStatus status = garage.getStatus();
-    expect(status.getTotalOccupied() == 2, "UC-008: Should report 2 occupied spaces");
+    EXPECT_EQ(status.getTotalOccupied(), 2) << "UC-008: Should report 2 occupied spaces";
 }
 
-void test_UC008_query_queue_length() {
+TEST(UC008_QueryStatus, QueueLength) {
     Garage garage(100);
 
     Vehicle v1(1, Size::SMALL, 5, 0);
@@ -458,10 +436,10 @@ void test_UC008_query_queue_length() {
     garage.addVehicle(v2);
 
     GarageStatus status = garage.getStatus();
-    expect(status.queue_length == 2, "UC-008: Should report queue length of 2");
+    EXPECT_EQ(status.queue_length, 2) << "UC-008: Should report queue length of 2";
 }
 
-void test_UC008_query_fees_and_car_count() {
+TEST(UC008_QueryStatus, FeesAndCarCount) {
     Garage garage(100);
 
     Vehicle v(1, Size::SMALL, 3, 0);
@@ -470,11 +448,11 @@ void test_UC008_query_fees_and_car_count() {
     garage.unparkExpiredVehicles(3);
 
     GarageStatus status = garage.getStatus();
-    expect(status.fees_collected == 3, "UC-008: Should report correct fees");
-    expect(status.cars_parked == 1, "UC-008: Should report correct car count");
+    EXPECT_EQ(status.fees_collected, 3) << "UC-008: Should report correct fees";
+    EXPECT_EQ(status.cars_parked, 1) << "UC-008: Should report correct car count";
 }
 
-void test_UC008_available_spaces_calculation() {
+TEST(UC008_QueryStatus, AvailableSpacesCalculation) {
     Garage garage(100);
 
     Vehicle v(1, Size::SMALL, 10, 0);
@@ -482,77 +460,5 @@ void test_UC008_available_spaces_calculation() {
     garage.parkNextVehicle(0);
 
     GarageStatus status = garage.getStatus();
-    expect(status.getTotalAvailable() == 99, "UC-008: Should report 99 available spaces");
-}
-
-}  // namespace
-
-int main() {
-    std::cout << "Running PGOF Functional Tests...\n\n";
-
-    // UC-001: System Initialization
-    std::cout << "UC-001: System Initialization\n";
-    test_UC001_system_initialization_valid_range();
-    test_UC001_system_initialization_minimum();
-    test_UC001_system_initialization_maximum();
-    test_UC001_system_initialization_invalid_low();
-    test_UC001_system_initialization_invalid_high();
-    test_UC001_reinitialize();
-    std::cout << "  PASSED\n\n";
-
-    // UC-002: Vehicle Arrival and Queue Entry
-    std::cout << "UC-002: Vehicle Arrival and Queue Entry\n";
-    test_UC002_vehicle_arrival_adds_to_queue();
-    test_UC002_fifo_queue_ordering();
-    test_UC002_accept_all_valid_sizes();
-    test_UC002_accept_all_valid_wait_times();
-    std::cout << "  PASSED\n\n";
-
-    // UC-003: Park Vehicle (Normal Mode)
-    std::cout << "UC-003: Park Vehicle (Normal Mode)\n";
-    test_UC003_park_vehicle_fifo_order();
-    test_UC003_parking_compatibility();
-    test_UC003_increments_parked_count();
-    test_UC003_garage_mode_is_fifo_initially();
-    std::cout << "  PASSED\n\n";
-
-    // UC-004: Park Vehicle (Selective Mode)
-    std::cout << "UC-004: Park Vehicle (Selective Mode)\n";
-    test_UC004_selective_mode_when_first_blocked();
-    test_UC004_returns_to_fifo_when_space_available();
-    std::cout << "  PASSED\n\n";
-
-    // UC-005: Unpark Vehicle
-    std::cout << "UC-005: Unpark Vehicle\n";
-    test_UC005_unpark_expired_vehicle();
-    test_UC005_space_becomes_available_after_unpark();
-    test_UC005_no_unpark_before_expiry();
-    std::cout << "  PASSED\n\n";
-
-    // UC-006: Calculate and Track Fees
-    std::cout << "UC-006: Calculate and Track Fees\n";
-    test_UC006_fee_calculation_formula();
-    test_UC006_running_total();
-    test_UC006_different_vehicle_sizes_fees();
-    std::cout << "  PASSED\n\n";
-
-    // UC-007: Track Parking Statistics
-    std::cout << "UC-007: Track Parking Statistics\n";
-    test_UC007_running_car_count();
-    test_UC007_car_count_persists_after_unpark();
-    test_UC007_fee_total_tracking();
-    std::cout << "  PASSED\n\n";
-
-    // UC-008: Query Garage Status
-    std::cout << "UC-008: Query Garage Status\n";
-    test_UC008_query_total_spaces();
-    test_UC008_query_space_distribution();
-    test_UC008_query_occupied_spaces();
-    test_UC008_query_queue_length();
-    test_UC008_query_fees_and_car_count();
-    test_UC008_available_spaces_calculation();
-    std::cout << "  PASSED\n\n";
-
-    std::cout << "All PGOF Functional Tests PASSED!\n";
-    return 0;
+    EXPECT_EQ(status.getTotalAvailable(), 99) << "UC-008: Should report 99 available spaces";
 }
